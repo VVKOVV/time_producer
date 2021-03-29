@@ -1,6 +1,8 @@
 import kafka
 from time import time, sleep
 from os import environ
+from prometheus_client import start_http_server, Gauge
+from random import randrange
 
 try:
     server = environ['KAFKA_SERVER']
@@ -36,13 +38,17 @@ def write_to_topic(server, topic_name = 'input'):
     producer.send(topic_name, key = b'epoch', value = epoch_time.encode())
     return epoch_time
 
+start_http_server(5000)
+prometheus_gaue = Gauge('producer_sleep_time', 'Sleep for N sec')
 
 while True:
     try:
         if check_the_topic(server) == True:
             for i in range(100):
                 print(write_to_topic(server), flush=True)
-                sleep(10)
+                time_to_sleep = randrange(10, 15)
+                prometheus_gaue.set(time_to_sleep)
+                sleep(time_to_sleep)
     except Exception as err:
         print(err, flush=True)
         sleep(60)
